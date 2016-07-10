@@ -1,121 +1,104 @@
-func! s:apply_pos(pos, command, visual)
-    call setpos(".", a:pos)
-    if a:command == "."
-        silent norm .
-        " if !multi#successful()
-        "     return
-        " endif
-    else
-        exec "norm ".a:command
-        call multi#update_pos_vars()
-    endif
-    return multi#new_area(a:visual)
-endfunc
-func! multi#command#apply_command(area, command)
-    call multi#setup(a:area.cursor)
-    if a:area.isVisual
-        if a:command == "."
-            norm .
-            if !multi#successful()
-                return
-            endif
-        else
-            call setpos("'<", a:area.left)
-            call setpos("'>", a:area.right)
-            exec "norm gv".a:command
-        endif
-        call multi#update_pos_vars()
-        return [multi#new_area(0)]
-    else
-        return [s:apply_pos(a:area.cursor, a:command, 0)]
-    endif
-endfunc
-func! multi#command#apply_motion(area, motion)
-    if a:area.isVisual
-        let side = !has_key(a:area, "side") || !a:area.side
-        if side
-            let cur = "right"
-            let alt = "left"
-        else
-            let cur = "left"
-            let alt = "right"
-        endif
-        call multi#setup(a:area[cur])
-        let new_area = s:apply_pos(a:area[cur], a:motion, 1)
-        let shift = multi#compare_pos(a:area[alt], new_area.cursor)
-        if side && shift < 1 || !side && shift > -1
-            let new_area[alt] = a:area[alt]
-            let cmp =multi#compare_pos(new_area.cursor, new_area[cur])
-            let new_area[cur] =  cmp == -1 ? new_area[cur] : new_area.cursor
-            let new_area.cursor = new_area[cur]
-            let new_area.side = !side
-        else
-            let new_area[cur] = a:area[alt]
-            let cmp = multi#compare_pos(new_area.cursor, new_area[alt])
-            let new_area[alt] = cmp == -1 ? new_area[alt] : new_area.cursor
-            let new_area.cursor = new_area[alt]
-            let new_area.side = side
-        endif
-        return [new_area]
-    else
-        call multi#setup(a:area.cursor)
-        return [s:apply_pos(a:area.cursor, a:motion, 0)]
-    endif
-endfunc
+let multi#command#overwrite = {}
 
-func! multi#command#bind_motion(area, motion)
-    if a:area.isVisual
-        let cur_pos = a:area.left
-        let result = []
-        while 1
-            let old_pos = cur_pos
-            call multi#setup(cur_pos)
-            let new_area = s:apply_pos(cur_pos, a:motion, 0)
-            let cur_pos = new_area.cursor
-            if  multi#compare_pos(cur_pos, a:area.right) < 1 &&
-               \multi#compare_pos(old_pos, cur_pos) == -1
-               call add(result, new_area)
-            else
-                if len(result) > 0
-                    return result
-                else
-                    return [new_area]
-                endif
-            endif
-        endwhile
+let multi#command#simple_motion = {}
+function multi#command#simple_motion.normal(area, command)
+    call setpos('.', a:area.cursor)
+    execute "silent norm " . a:command
+    return [multi#util#new_area(0)]
+endfunction
+function multi#command#simple_motion.visual(area, command)
+    let side = !has_key(a:area, "side") || !a:area.side
+    if side                 
+        let cur = "right"
+        let alt = "left"
     else
-        return [s:apply_pos(a:area.cursor, a:motion, 0)]
+        let cur = "left"
+        let alt = "right"
     endif
-endfunc
 
-func! multi#command#apply_textobject(area, text_object)
-    call multi#setup(a:area.cursor)
-    if a:area.isVisual
-        let cur_pos = a:area.left
-        let result = []
-        while 1
-            let old_pos = cur_pos
-            let new_area = s:apply_pos(cur_pos, "g@".a:text_object, 1)
-            let cur_pos = s:add_pos(new_area.right)
-            let cmp = multi#compare_pos(new_area.cursor, a:area.right)
-            if  cmp < 1 && 
-                \multi#compare_pos(old_pos, cur_pos) == -1
-               call add(result, new_area)
-            else
+    call setpos('.', a:area[cur])
+    execute "silent norm " . a:command
+    let new_area = multi#util#new_area(1)
+
+    let shift = multi#compare_pos(a:area[alt], new_area.cursor)
+    if side && shift < 1 || !side && shift > -1
+        let new_area[alt] = a:area[alt]
+        let new_area[cur] =  new_area.cursor
+        let new_area.side = !side
+    else
+        let new_area[cur] = a:area[alt]
+        let new_area[alt] = new_area.cursor
+        let new_area.side = side
+    endif
+    return [new_area]
+endfunction
+function multi#command#simple_motion.bind(area, command)
+    let cur_pos = a:area.left
+    let result = []
+    while 1
+        let old_pos = cur_pos
+
+        call setpos('.', cur_pos)
+        exec "silent norm " . a:command
+        let new_area = multi#util#new_area(0)
+        let cur_pos = new_area.cursor
+
+        if  multi#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
+           \multi#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
+           call add(result, new_area)
+        else
+            if len(result) > 0
                 return result
+            else
+                return [new_area]
             endif
-        endwhile
-    else
-        return [s:apply_pos(a:area.cursor, "g@".a:text_object, 1)]
-    endif
-endfunc
+        endif
+    endwhile
+endfunction
 
-func! s:add_pos(pos)
-    let pos = deepcopy(a:pos)
-    let pos[2] += 1
-    if pos[2] > col([pos[1], "$"])
-        let pos[1] += 1
-        let pos[2] = 1
-    endif
-    return pos
-endfunc
+let multi#command#command = {}
+function multi#command#command.normal(area, command)
+    call multi#util#setup(a:area.cursor)
+    silent norm .
+    return multi#util#new_area(0)
+endfunction
+function multi#command#command.visual(area, command)
+    let tick = b:changedtick
+    call setpos("'<", a:area.left)
+    call setpos("'>", a:area.right)
+    norm gv
+    exec "silent norm ".a:command
+    return multi#util#new_area(0)
+endfunction
+
+let multi#command#textobj = {}
+function multi#command#textobj.normal(area, command)
+    call multi#util#setup(a:area.cursor, 1)
+    silent norm .
+    return [g:multi#state_manager.state.new]
+endfunction
+function multi#command#textobj.visual(area, command)
+    call multi#util#setup(a:area.cursor)
+    let cur_pos = a:area.left
+    let result = []
+    while 1
+        let old_pos = cur_pos
+
+        call multi#util#setup(cur_pos, 1)
+        silent norm .
+        let new_area = g:multi#state_manager.state.new
+        let cur_pos = deepcopy(new_area.cursor)
+        let cur_pos[2] += 1
+        if cur_pos[2] > col([cur_pos[1], "$"])
+            let cur_pos[1] += 1
+            let cur_pos[2] = 1
+        endif
+
+        if  multi#compare_pos(new_area.right, a:area.right) < 1 && 
+            \multi#compare_pos(old_pos, cur_pos) == -1
+           call add(result, new_area)
+        else
+            return result
+        endif
+    endwhile
+endfunction
