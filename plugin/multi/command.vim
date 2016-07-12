@@ -20,7 +20,7 @@ function multi#command#simple_motion.visual(area, command)
     execute "silent norm " . a:command
     let new_area = multi#util#new_area(1)
 
-    let shift = multi#compare_pos(a:area[alt], new_area.cursor)
+    let shift = multi#util#compare_pos(a:area[alt], new_area.cursor)
     if side && shift < 1 || !side && shift > -1
         let new_area[alt] = a:area[alt]
         let new_area[cur] =  new_area.cursor
@@ -43,8 +43,8 @@ function multi#command#simple_motion.bind(area, command)
         let new_area = multi#util#new_area(0)
         let cur_pos = new_area.cursor
 
-        if  multi#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
-           \multi#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
+        if  multi#util#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
+           \multi#util#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
            call add(result, new_area)
         else
             if len(result) > 0
@@ -60,15 +60,15 @@ let multi#command#command = {}
 function multi#command#command.normal(area, command)
     call multi#util#setup(a:area.cursor)
     silent norm .
-    return multi#util#new_area(0)
+    return [multi#util#new_area(0)]
 endfunction
 function multi#command#command.visual(area, command)
     let tick = b:changedtick
     call setpos("'<", a:area.left)
     call setpos("'>", a:area.right)
-    norm gv
+    norm `<v`>
     exec "silent norm ".a:command
-    return multi#util#new_area(0)
+    return [multi#util#new_area(0)]
 endfunction
 
 let multi#command#textobj = {}
@@ -94,8 +94,8 @@ function multi#command#textobj.visual(area, command)
             let cur_pos[2] = 1
         endif
 
-        if  multi#compare_pos(new_area.right, a:area.right) < 1 && 
-            \multi#compare_pos(old_pos, cur_pos) == -1
+        if  multi#util#compare_pos(new_area.right, a:area.right) < 1 && 
+            \multi#util#compare_pos(old_pos, cur_pos) == -1
            call add(result, new_area)
         else
             return result

@@ -6,11 +6,10 @@ func! multi#cursors#new()
                 \}
 endfunc
 
-func! multi#cursors#apply(cursors, func, motion, backwards)
-endfunc
-func! multi#cursors#add(cursors, area, visual)
+func! multi#cursors#add(cursors, area, visual, ...)
+    let skip_check = a:0 ? a:1 : 0
     let a:cursors.visual = a:cursors.visual || a:visual
-    if len(a:cursors.cursors) == 0 
+    if len(a:cursors.cursors) == 0 || skip_check
         call add(a:cursors.cursors, a:area)
         return
     endif

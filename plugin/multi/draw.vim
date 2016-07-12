@@ -1,13 +1,9 @@
-
 function! multi#draw#reset()
     for entry in g:multi#state_manager.matches
         silent! call matchdelete(entry)
     endfor
     let g:multi#state_manager.matches = []
 endfunction
-
-
-
 
 let s:visual_group = 'WildMenu'
 let s:normal_group = 'Cursor'

@@ -15,7 +15,6 @@ func! multi#state_manager#new()
           \}
 endfunc
               " \"changed":       0,
-let g:multi#state_manager = multi#state_manager#new()
 
 func! multi#state_manager#init(...) dict
     let visual = a:0 ? a:1 : 0
@@ -41,9 +40,12 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
     for i in range
         let new_areas = a:func[a:type](self.cursors.cursors[i], a:motion)
         for area in new_areas
-            call multi#cursors#add(result, area, area.visual)
+            call multi#cursors#add(result, area, area.visual, a:backwards)
         endfor
     endfor
+    if a:backwards
+        call reverse(result.cursors)
+    endif
     let self.cursors = result
     call self.redraw()
 endfunc
@@ -67,5 +69,6 @@ func! multi#state_manager#redraw() dict
             endif
         endif
     endfor
+    call setpos(".", self.cursors.cursors[-1].cursor)
     redraw!
 endfunc

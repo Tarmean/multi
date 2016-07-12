@@ -18,16 +18,16 @@ function multi#command#complex_motion.visual(area, command)
     silent norm .
     let new_area = g:multi#state_manager.state.new
 
-    let shift = multi#compare_pos(a:area[alt], new_area.cursor)
+    let shift = multi#util#compare_pos(a:area[alt], new_area.cursor)
     if side && shift < 1 || !side && shift > -1
         let new_area[alt] = a:area[alt]
-        " let cmp = multi#compare_pos(new_area.cursor, new_area[cur])
+        " let cmp = multi#util#compare_pos(new_area.cursor, new_area[cur])
         " let new_area[cur] =  cmp == -1 ? new_area[cur] : new_area.cursor
         let new_area[cur] =  new_area.cursor
         let new_area.side = !side
     else
         let new_area[cur] = a:area[alt]
-        " let cmp = multi#compare_pos(new_area.cursor, new_area[alt])
+        " let cmp = multi#util#compare_pos(new_area.cursor, new_area[alt])
         let new_area[alt] = new_area.cursor
         let new_area.side = side
     endif
@@ -44,8 +44,8 @@ function multi#command#complex_motion.bind(area, command)
         let new_area = g:multi#state_manager.state.new
         let cur_pos = new_area.cursor
 
-        if  multi#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
-           \multi#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
+        if  multi#util#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
+           \multi#util#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
            call add(result, new_area)
         else
             if len(result) > 0
