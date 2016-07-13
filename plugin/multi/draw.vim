@@ -37,6 +37,34 @@ function! multi#draw#area(left, right)
     endif
 endfunction
 
+function! multi#draw#line(left, right)
+    let line_pattern = '\%>' . (a:left[1]-1) . 'l\%<' . (a:right[1]+1).'l'
+    call add(g:multi#state_manager.matches, matchadd('DiffAdd', line_pattern))
+    let newline_pattern = '\n\%>' . a:left[1] . 'l\%<'.(a:right[1]+1) .'l'
+    call add(g:multi#state_manager.matches, matchadd(s:visual_newline_group, newline_pattern))
+endfunction
+
+function! multi#draw#block(left, right)
+    " if a:left[1] <= a:right[1]
+        let line_top = a:left[1]
+        let line_bot  = a:right[1]
+    " else
+    "     let line_top  = a:right[1]
+    "     let line_bot  = a:left[1]
+    " endif
+    if a:left[2] <= a:right[2]
+        let col_left  = a:left[2]
+        let col_right = a:right[2]
+    else
+        let col_left  = a:right[2]
+        let col_right = a:left[2]
+    endif
+    let left = '\%>' . (line_top-1) . 'l\%>' . (col_left-1)  . 'c'
+    let right = '\%<' . (line_bot+1).'l\%<' . (col_right+1) . 'c'
+    let line_pattern = left . right
+    call add(g:multi#state_manager.matches, matchadd('ErrorMsg', line_pattern))
+endfunction
+
 function! multi#draw#cursor(cursor)
     call add(g:multi#state_manager.matches, matchaddpos(s:normal_group, [[a:cursor[1], a:cursor[2]]]))
 endfunction

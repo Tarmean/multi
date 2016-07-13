@@ -14,7 +14,7 @@ function multi#command#complex_motion.visual(area, command)
         let alt = "right"
     endif
 
-    call multi#util#setup(a:area[cur])
+    call multi#util#setup(a:area[cur], 1)
     silent norm .
     let new_area = g:multi#state_manager.state.new
 
@@ -57,3 +57,6 @@ function multi#command#complex_motion.bind(area, command)
     endwhile
 endfunction
 
+function multi#command#complex_motion.pre(command)
+    call feedkeys('g@v'.a:command, 'ix')
+endfunction

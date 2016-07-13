@@ -17,9 +17,9 @@ endfunc
               " \"changed":       0,
 
 func! multi#state_manager#init(...) dict
-    let visual = a:0 ? a:1 : 0
+    let visual = a:0 ? a:1 : 'n'
     let area = {
-           \"visual": visual,
+           \"visual":   visual,
            \"cursor":   getcurpos(),
            \"left":     getpos("'<"),
            \"right":    getpos("'>"),
@@ -31,6 +31,7 @@ func! multi#state_manager#init(...) dict
 endfunc
 
 func! multi#state_manager#apply(func, type, motion, backwards) dict
+    call clearmatches()
     let result = multi#cursors#new()
     if a:backwards
         let range = range(len(self.cursors.cursors)-1, 0, -1)
@@ -38,35 +39,43 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
         let range = range(0, len(self.cursors.cursors)-1)
     endif
     for i in range
+        call setreg('"', self.cursors.cursors[i].reg)
         let new_areas = a:func[a:type](self.cursors.cursors[i], a:motion)
         for area in new_areas
             call multi#cursors#add(result, area, area.visual, a:backwards)
         endfor
     endfor
+
     if a:backwards
         call reverse(result.cursors)
     endif
     let self.cursors = result
-    call self.redraw()
+    if len(self.cursors.cursors) > 0
+        call self.redraw()
+    endif
 endfunc
 
 func! multi#state_manager#redraw() dict
     call multi#draw#reset()
+    " let top = line("w0")
+    " let bottom = line("w$")
     call setpos(".", [0, 0, 0, 0])
-    let top = line("w0")
-    let bottom = line("w$")
     let visual = self.cursors.visual
     for cursor in self.cursors.cursors
-        if visual
-            let top_fits    = cursor.left[1] >= top
-            let bottom_fits = cursor.right[1] <= bottom
-            if top_fits || bottom_fits
+        if visual ==# 'visual_char'
+            " let top_fits    = cursor.left[1] >= top
+            " let bottom_fits = cursor.right[1] <= bottom
+            " if top_fits || bottom_fits
                 call multi#draw#area(cursor.left, cursor.right)
-            endif
+            " endif
+        elseif visual ==# 'visual_line'
+                call multi#draw#line(cursor.left, cursor.right)
+        elseif visual ==# 'visual_block'
+                call multi#draw#block(cursor.left, cursor.right)
         else
-            if top <= cursor.cursor[1] && cursor.cursor[1] <= bottom
-                call multi#draw#cursor(cursor.cursor)
-            endif
+            " if top <= cursor.cursor[1] && cursor.cursor[1] <= bottom
+            call multi#draw#cursor(cursor.cursor)
+            " endif
         endif
     endfor
     call setpos(".", self.cursors.cursors[-1].cursor)

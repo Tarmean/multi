@@ -4,7 +4,7 @@ let multi#command#simple_motion = {}
 function multi#command#simple_motion.normal(area, command)
     call setpos('.', a:area.cursor)
     execute "silent norm " . a:command
-    return [multi#util#new_area(0)]
+    return [multi#util#new_area('normal')]
 endfunction
 function multi#command#simple_motion.visual(area, command)
     let side = !has_key(a:area, "side") || !a:area.side
@@ -18,18 +18,19 @@ function multi#command#simple_motion.visual(area, command)
 
     call setpos('.', a:area[cur])
     execute "silent norm " . a:command
-    let new_area = multi#util#new_area(1)
+    let new_area = multi#util#new_area(a:area.visual)
 
     let shift = multi#util#compare_pos(a:area[alt], new_area.cursor)
     if side && shift < 1 || !side && shift > -1
         let new_area[alt] = a:area[alt]
-        let new_area[cur] =  new_area.cursor
+        let new_area[cur] =  deepcopy(new_area.cursor)
         let new_area.side = !side
     else
         let new_area[cur] = a:area[alt]
-        let new_area[alt] = new_area.cursor
+        let new_area[alt] = deepcopy(new_area.cursor)
         let new_area.side = side
     endif
+
     return [new_area]
 endfunction
 function multi#command#simple_motion.bind(area, command)
@@ -40,7 +41,7 @@ function multi#command#simple_motion.bind(area, command)
 
         call setpos('.', cur_pos)
         exec "silent norm " . a:command
-        let new_area = multi#util#new_area(0)
+        let new_area = multi#util#new_area('normal')
         let cur_pos = new_area.cursor
 
         if  multi#util#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
@@ -57,27 +58,52 @@ function multi#command#simple_motion.bind(area, command)
 endfunction
 
 let multi#command#command = {}
+function multi#command#command.pre(command)
+    let self.undo_count = 0
+endfunction
+function multi#command#command.post()
+    " for i in range(1, self.undo_count)
+    "     undojoin
+    " endfor
+endfunction
 function multi#command#command.normal(area, command)
     call multi#util#setup(a:area.cursor)
-    silent norm .
-    return [multi#util#new_area(0)]
+    if self.undo_count > 1
+        undojoin | exec "silent norm " . a:command
+    else
+        exec "silent norm " . a:command
+    endif
+    if g:multi#state_manager.state.tick != b:changedtick
+        let self.undo_count += 1
+    endif
+    let area = multi#util#new_area('normal')
+    return [area]
 endfunction
 function multi#command#command.visual(area, command)
     let tick = b:changedtick
-    call setpos("'<", a:area.left)
-    call setpos("'>", a:area.right)
-    norm `<v`>
-    exec "silent norm ".a:command
-    return [multi#util#new_area(0)]
+    if self.undo_count > 1
+        undojoin | call multi#util#apply_visual(a:area, a:command)
+    else
+        call multi#util#apply_visual(a:area, a:command)
+    endif
+    if g:multi#state_manager.state.tick != b:changedtick
+        let self.undo_count += 1
+    endif
+    return [multi#util#new_area('normal')]
 endfunction
 
 let multi#command#textobj = {}
 function multi#command#textobj.normal(area, command)
     call multi#util#setup(a:area.cursor, 1)
-    silent norm .
+    execute "silent norm g@".a:command
     return [g:multi#state_manager.state.new]
 endfunction
 function multi#command#textobj.visual(area, command)
+    call multi#util#setup(a:area.cursor, 1)
+    execute "silent norm g@".a:command
+    return [g:multi#state_manager.state.new]
+endfunction
+function multi#command#textobj.bind(area, command)
     call multi#util#setup(a:area.cursor)
     let cur_pos = a:area.left
     let result = []
@@ -85,10 +111,10 @@ function multi#command#textobj.visual(area, command)
         let old_pos = cur_pos
 
         call multi#util#setup(cur_pos, 1)
-        silent norm .
+        execute "silent norm g@".a:command
         let new_area = g:multi#state_manager.state.new
         let cur_pos = deepcopy(new_area.cursor)
-        let cur_pos[2] += 1
+        let cur_pos[2] += 2
         if cur_pos[2] > col([cur_pos[1], "$"])
             let cur_pos[1] += 1
             let cur_pos[2] = 1
