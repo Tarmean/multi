@@ -44,8 +44,16 @@ function multi#command#simple_motion.bind(area, command)
         let new_area = multi#util#new_area('normal')
         let cur_pos = new_area.cursor
 
-        if  multi#util#compare_pos(cur_pos[0:3], a:area.right) < 1 &&
-           \multi#util#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
+        if a:area.visual == "visual_line"
+            let right_border = deepcopy(a:area.right)
+            let right_border[2] = 2147483647
+        else
+            let right_border = a:area.right
+        endif
+
+        let check_in_area = multi#util#compare_pos(cur_pos[0:3], right_border) < 1
+        let check_not_recursive = multi#util#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
+        if  check_in_area && check_not_recursive
            call add(result, new_area)
         else
             if len(result) > 0
@@ -57,14 +65,10 @@ function multi#command#simple_motion.bind(area, command)
     endwhile
 endfunction
 
-let multi#command#command = {}
+let multi#command#command = {"undo_count": 0}
 function multi#command#command.pre(command)
+    let g:multi#state_manager.state.repeat_command = a:command
     let self.undo_count = 0
-endfunction
-function multi#command#command.post()
-    " for i in range(1, self.undo_count)
-    "     undojoin
-    " endfor
 endfunction
 function multi#command#command.normal(area, command)
     call multi#util#setup(a:area.cursor)
@@ -76,8 +80,7 @@ function multi#command#command.normal(area, command)
     if g:multi#state_manager.state.tick != b:changedtick
         let self.undo_count += 1
     endif
-    let area = multi#util#new_area('normal')
-    return [area]
+    return [multi#util#new_area('normal')]
 endfunction
 function multi#command#command.visual(area, command)
     let tick = b:changedtick
@@ -93,14 +96,20 @@ function multi#command#command.visual(area, command)
 endfunction
 
 let multi#command#textobj = {}
+function multi#command#textobj.pre(command)
+    call multi#util#setup_op()
+endfunc
+function multi#command#textobj.post()
+    call multi#util#clean_op()
+endfunc
 function multi#command#textobj.normal(area, command)
     call multi#util#setup(a:area.cursor, 1)
-    execute "silent norm g@".a:command
+    call multi#util#apply_op(a:command, 0, 0)
     return [g:multi#state_manager.state.new]
 endfunction
 function multi#command#textobj.visual(area, command)
     call multi#util#setup(a:area.cursor, 1)
-    execute "silent norm g@".a:command
+    call multi#util#apply_op(a:command, 0, 0)
     return [g:multi#state_manager.state.new]
 endfunction
 function multi#command#textobj.bind(area, command)
@@ -111,7 +120,7 @@ function multi#command#textobj.bind(area, command)
         let old_pos = cur_pos
 
         call multi#util#setup(cur_pos, 1)
-        execute "silent norm g@".a:command
+        call multi#util#apply_op(a:command, 0, 0)
         let new_area = g:multi#state_manager.state.new
         let cur_pos = deepcopy(new_area.cursor)
         let cur_pos[2] += 2

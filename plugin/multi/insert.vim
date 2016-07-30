@@ -1,21 +1,29 @@
 function! multi#insert#setup(input, type)
     let s:changes = 0
     call g:multi#state_manager.apply(g:multi#command#insert, 'prime_normal', a:input, 1)
+    call g:multi#state_manager.redraw()
+    let insert_input = ""
     while 1
         let s:first = s:changes
         let s:changes = 1
+        " echo "-- INSERT --"
         let c = getchar()
         if type(c) == 0
             let s = nr2char(c)
         else
             let s = c
         endif
+        let insert_input .= s
         if s == "\<Esc>"
             break
         endif
         unlet c
         call g:multi#state_manager.apply(g:multi#command#insert, 'normal', s, 1)
+        call g:multi#state_manager.redraw()
     endwhile
+    if len(insert_input) > 0
+        let g:multi#state_manager.state.repeat_command = a:input . insert_input
+    endif
 endfunction
 
 let multi#command#insert = {}

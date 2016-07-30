@@ -37,7 +37,7 @@ function! multi#util#test_op(type)
     else
         let state.moved = 1
     endif
-    let g:a  = a:type . string(state.old) . string(state.new) . string(state.moved)
+    " let g:a  = a:type ." ".string(state.old)." ". string(state.new) ." ".string(state.moved)
 endfunction
 
 
@@ -49,6 +49,9 @@ function! multi#util#compare_pos(a, b)
     else
         return a:a[2] < a:b[2] ? -1 : a:a[2] == a:b[2] ? 0 : 1
     endif
+endfunction
+
+function! multi#util#in_block(a, b)
 endfunction
 
 function! multi#util#get_type()
@@ -74,7 +77,34 @@ function! multi#util#apply_visual(area, command)
     call setpos("'>", a:area.right)
     exec 'silent norm gv'. a:command
 endfunction
+function! multi#util#setup_op()
+    call setpos(".", g:multi#state_manager.cursors.cursors[0].left)
+    let s:repeat_tick = g:repeat_tick
+    let s:old_op = &opfunc
+    set opfunc=multi#util#test_op
+endfunction
+
+function! multi#util#apply_op(command, interactive, inclusive)
+    let op_command = 'g@' . (a:inclusive ? 'v' : '') . a:command
+    if a:interactive
+        call feedkeys(op_command, 'ix')
+    else
+        exec "silent! norm ".op_command
+    endif
+endfunction
+function! multi#util#clean_op()
+    let g:repeat_tick = s:repeat_tick
+    let &opfunc = s:old_op
+endfunction
+
 
 function! multi#util#cleanup()
     call multi#draw#reset()
 endfunction
+
+function! multi#util#callback(op)
+    call g:multi#command#command.pre(".")
+    call g:multi#state_manager.apply(g:multi#command#command, 'normal', '.', 0)
+    call g:multi#state_manager.redraw()
+    call multi#run()
+endfunc

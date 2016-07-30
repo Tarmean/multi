@@ -7,6 +7,9 @@ func! multi#cursors#new()
 endfunc
 
 func! multi#cursors#add(cursors, area, visual, ...)
+    " TODO: fix line and block selection merge detection, decide between merge
+    " on overlap/merge on touch and apply cursor merging to actions with side
+    " effect after they are reverted to the correct ordering
     let skip_check = a:0 ? a:1 : 0
     let a:cursors.visual = a:visual
     if len(a:cursors.cursors) == 0 || skip_check

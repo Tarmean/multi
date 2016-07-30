@@ -5,9 +5,9 @@ function! multi#draw#reset()
     let g:multi#state_manager.matches = []
 endfunction
 
-let s:visual_group = 'WildMenu'
+let s:visual_group = 'Visual'
 let s:normal_group = 'Cursor'
-let s:visual_newline_group = 'DiffChange'
+let s:visual_newline_group = 'StatusLineNC'
 " let s:visual_newline_group = 'CursorLine'
 " '#665c54'
 function! multi#draw#area(left, right)
@@ -15,10 +15,10 @@ function! multi#draw#area(left, right)
     let lower_line = a:right[1]
 
     if lower_line == upper_line
-        call add(g:multi#state_manager.matches, matchaddpos("DiffAdd", [[lower_line, a:left[2], a:right[2]-a:left[2]+1]]))
+        call add(g:multi#state_manager.matches, matchaddpos(s:visual_group, [[lower_line, a:left[2], a:right[2]-a:left[2]+1]]))
     else
         if a:left[2] != 1
-            call add(g:multi#state_manager.matches, matchaddpos("DiffText", [[upper_line, a:left[2], 2147483647-a:left[2]]]))
+            call add(g:multi#state_manager.matches, matchaddpos(s:visual_group, [[upper_line, a:left[2], 2147483647-a:left[2]]]))
             let upper_line += 1
         endif
         if a:right[2] != 2147483647
@@ -30,7 +30,7 @@ function! multi#draw#area(left, right)
             " XXX: is it faster to match the area with \%< and \%> only or to do
             " it in one go like this?
             let pattern_1 = '\%>' . (upper_line-1) . 'l\%<' . (lower_line+1).'l'
-            call add(g:multi#state_manager.matches, matchadd('ErrorMsg', pattern_1))
+            call add(g:multi#state_manager.matches, matchadd(s:visual_group, pattern_1))
         endif
         let newline_pattern = '\n\%>' . a:left[1] . 'l\%<'.(a:right[1]+1) .'l'
         call add(g:multi#state_manager.matches, matchadd(s:visual_newline_group, newline_pattern))
@@ -38,9 +38,9 @@ function! multi#draw#area(left, right)
 endfunction
 
 function! multi#draw#line(left, right)
-    let line_pattern = '\%>' . (a:left[1]-1) . 'l\%<' . (a:right[1]+1).'l'
-    call add(g:multi#state_manager.matches, matchadd('DiffAdd', line_pattern))
-    let newline_pattern = '\n\%>' . a:left[1] . 'l\%<'.(a:right[1]+1) .'l'
+    let line_pattern = '[^\n]\%>' . (a:left[1]-1) . 'l\%<' . (a:right[1]+1).'l'
+    call add(g:multi#state_manager.matches, matchadd(s:visual_group, line_pattern))
+    let newline_pattern = '\n\%>' . a:left[1] . 'l\%<'.(a:right[1]+2) .'l'
     call add(g:multi#state_manager.matches, matchadd(s:visual_newline_group, newline_pattern))
 endfunction
 
@@ -62,7 +62,7 @@ function! multi#draw#block(left, right)
     let left = '\%>' . (line_top-1) . 'l\%>' . (col_left-1)  . 'c'
     let right = '\%<' . (line_bot+1).'l\%<' . (col_right+1) . 'c'
     let line_pattern = left . right
-    call add(g:multi#state_manager.matches, matchadd('ErrorMsg', line_pattern))
+    call add(g:multi#state_manager.matches, matchadd(s:visual_group, line_pattern))
 endfunction
 
 function! multi#draw#cursor(cursor)

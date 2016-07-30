@@ -76,19 +76,48 @@ function multi#command#overwrite[''].visual(area, command)
 endfunction
 
 let multi#command#overwrite['f'] = multi#command#complex_motion
-let multi#command#overwrite['/'] = multi#command#complex_motion
-let multi#command#overwrite['y'] = {}
-let multi#command#overwrite['y'].visual = multi#command#command.visual
+let multi#command#overwrite['/'] = deepcopy(multi#command#complex_motion)
+
+let multi#command#overwrite['J'] = multi#command#command
 
 
-let multi#command#overwrite['.'] = {'skip': 1}
-function multi#command#overwrite['.'].pre(command)
-    let g:multi#state_manager.cursors.bind = !g:multi#state_manager.cursors.bind
+function! multi#command#overwrite['/'].post()
+    call multi#util#clean_op()
+    noh
 endfunction
 
+
+let multi#command#overwrite['.'] = {'skip':1, "side_effect":1}
+function multi#command#overwrite['.'].pre(command)
+    if g:multi#state_manager.cursors.visual != 'normal'
+        let self.skip = 1
+        let g:multi#state_manager.cursors.bind = !g:multi#state_manager.cursors.bind
+        return 2
+    else
+        " echo b:changedtick g:repeat_tick string(&opfunc) g:repeat_sequence
+        let self.skip = 0
+    endif
+endfunction
+" function multi#command#overwrite['.'].post()
+"     " let g:repeat_tick = b:changedtick
+" endfunction
+function multi#command#overwrite['.'].normal(area, command)
+    call setpos(".", a:area.cursor)
+    execute "norm ".g:multi#state_manager.state.repeat_command
+    return [a:area]
+endfunction
 let multi#command#overwrite['u'] = {'skip': 1}
 function multi#command#overwrite['u'].pre(command)
-    norm! u
+    if g:multi#state_manager.cursors.visual == 'normal'
+        norm! u
+    endif
+endfunction
+function! multi#command#overwrite['u'].normal(area, command)
+    let col = max([col([a:area.cursor[1], "$"]) - 1, 1])
+    if a:area.cursor[2] > col
+        let a:area.cursor[2] = col
+    endif
+    return [a:area]
 endfunction
 
 let multi#command#overwrite[''] = {'skip': 1}
@@ -98,9 +127,18 @@ endfunction
 
 let multi#command#overwrite[''] = {'skip': 1}
 function multi#command#overwrite[''].pre(command)
+    if g:multi#state_manager.cursors.bind == 1
+        let g:multi#state_manager.cursors.bind = 0
+        let self.keep_cur = 1
+    else
+        let self.keep_cur = 0
+    endif
     let self.reg = ''
 endfunction
 function multi#command#overwrite[''].normal(area, command)
+    if self.keep_cur
+        return [a:area]
+    endif
     if a:area.reg[len(a:area.reg)-1] != "\n"
         let a:area.reg .= "\n"
     endif
@@ -108,6 +146,9 @@ function multi#command#overwrite[''].normal(area, command)
     return []
 endfunction
 function multi#command#overwrite[''].visual(area, command)
+    if self.keep_cur
+        return [a:area]
+    endif
     let a:area.cursor = a:area.left
     let a:area.visual = 'normal'
     return [a:area]
