@@ -81,13 +81,13 @@ function! multi#util#setup_op()
     call setpos(".", g:multi#state_manager.cursors.cursors[0].left)
     let s:repeat_tick = g:repeat_tick
     let s:old_op = &opfunc
-    set opfunc=multi#util#test_op
+    set opfunc=g:multi#util#test_op
 endfunction
 
 function! multi#util#apply_op(command, interactive, inclusive)
     let op_command = 'g@' . (a:inclusive ? 'v' : '') . a:command
     if a:interactive
-        call feedkeys(op_command, 'ix')
+        call feedkeys(op_command, 'ix!')
     else
         exec "silent! norm ".op_command
     endif

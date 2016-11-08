@@ -8,7 +8,7 @@ function! multi#init(visual)
     call g:multi#state_manager.init(a:visual)
     augroup MultiChecks
         au!
-        au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
+        " au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
         au InsertEnter * let g:multi#state_manager.state.insert_enter = 1
     augroup END
     try
