@@ -75,16 +75,16 @@ function multi#command#overwrite[''].visual(area, command)
     return [a:area]
 endfunction
 
-let multi#command#overwrite['f'] = multi#command#complex_motion
-let multi#command#overwrite['/'] = deepcopy(multi#command#complex_motion)
+" let multi#command#overwrite['f'] = multi#command#complex_motion
+" let multi#command#overwrite['/'] = deepcopy(multi#command#complex_motion)
 
 let multi#command#overwrite['J'] = multi#command#command
 
 
-function! multi#command#overwrite['/'].post()
-    call multi#util#clean_op()
-    noh
-endfunction
+" function! multi#command#overwrite['/'].post()
+"     call multi#util#clean_op()
+"     noh
+" endfunction
 
 
 let multi#command#overwrite['.'] = {'skip':1, "side_effect":1}
