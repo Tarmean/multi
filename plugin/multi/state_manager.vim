@@ -9,10 +9,13 @@ func! multi#state_manager#new()
               \"new":          {},
               \"old":          [],
               \"yank":          {'yanked':0},
+              \"finished": 0,
           \},
           \"init":   function('g:multi#state_manager#init'),
           \"apply":  function('g:multi#state_manager#apply'),
           \"redraw": function('g:multi#state_manager#redraw'),
+          \"set_finished": function('g:multi#state_manager#set_finished'),
+          \"test_command_failed": function('g:multi#state_manager#test_command_failed'),
           \}
 endfunc
               " \"changed":       0,
@@ -29,6 +32,17 @@ func! multi#state_manager#init(...) dict
     let self.cursors = multi#cursors#new()   " reset cursorss
     call multi#cursors#add(self.cursors, area, visual) " add initial cursor
     call self.redraw()
+endfunc
+
+func! multi#state_manager#test_command_failed(input) dict
+    let self.state.finished = 0
+    call multi#util#phantom({-> feedkeys(a:input . "\<esc>\<Plug>MultiFinished", 'x') })
+    redraw!
+    return self.state.finished == 0
+endfunc
+noremap <silent> <Plug>MultiFinished :call g:multi#state_manager.set_finished()<cr>
+func! multi#state_manager#set_finished() dict
+    let self.state.finished = 1
 endfunc
 
 func! multi#state_manager#apply(func, type, motion, backwards) dict

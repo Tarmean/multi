@@ -108,3 +108,11 @@ function! multi#util#callback(op)
     call g:multi#state_manager.redraw()
     call multi#run()
 endfunc
+function! multi#util#phantom(f)
+    let old_tick = b:changedtick
+    let out = a:f()
+    if old_tick != b:changedtick
+        norm! u
+    endif
+    return out
+endfunc

@@ -131,6 +131,9 @@ function! multi#run()
                     let command = g:multi#command#simple_motion
                 endif
             else
+                if g:multi#state_manager.test_command_failed(input)
+                    let input = ""
+                endif
                 call g:multi#state_manager.redraw()
                 continue
             endif
@@ -156,6 +159,8 @@ function! multi#run()
         endif
     endwhile
 endfunction
+
+
 
 
 " [NOTE: repeat.vim]
