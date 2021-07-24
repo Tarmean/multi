@@ -1,13 +1,6 @@
-let base = {}
-function base.new(arg={})
-    let s = deepcopy(self)
-    let s = extend(l:s, a:arg)
-    return s
-endfunc
+let multi#command#overwrite = {}
 
-let multi#command#overwrite = l:base.new({})
-
-let multi#command#simple_motion = l:base.new({})
+let multi#command#simple_motion = {}
 function multi#command#simple_motion.normal(area, command)
     call setpos('.', a:area.cursor)
     execute "silent norm " . a:command
@@ -43,6 +36,9 @@ endfunction
 function multi#command#simple_motion.bind(area, command)
     let cur_pos = a:area.left
     let result = []
+    if s:check_self_movement(a:area, a:command)
+        call add(result,multi#util#new_area('normal'))
+    endif
     while 1
         let old_pos = cur_pos
 
@@ -71,8 +67,72 @@ function multi#command#simple_motion.bind(area, command)
         endif
     endwhile
 endfunction
+function! s:check_self_movement(area, command)
+    let start_pos = a:area.left
+    function! s:movement_check() closure
+        exec "norm ". a:command
+    endfunction
+    call s:ensure_before_pos(start_pos, funcref("s:movement_check"))
+    if start_pos == getpos(".")
+        return 1
+    endif
+    " call s:ensure_above_pos(start_pos, function("s:movement_check"))
+    " if start_pos == getpos(".")
+    "     return 1
+    " endif
+    return 0
+endfunc
+function! s:ensure_before_pos(pos, f)
+    if a:pos[2] == 1
+        let old_line = getline(a:pos[1])
+        silent! undojoin|call setline(a:pos[1], " " . old_line)
+    endif
+    let lpos = copy(a:pos)
+    if lpos[2] > 1
+        let lpos[2] -= 1
+    endif
+    call setpos('.', lpos)
+    let o = a:f()
+    if a:pos[2] == 1
+        silent! undojoin|call setline(a:pos[1], old_line)
+        let curpos = getpos(".")
+        let curpos[2] -= 1
+        let curpos[3] -= 1
+        call setpos('.', curpos)
+    endif
+    return o
+endfunc
+function! s:ensure_above_pos(pos, f)
+    if a:pos[1] == 1
+        let old_line = ""
+    else
+        let old_line = getline(a:pos[1]-1)
+    endif
+    let diff = a:pos[2] - len(old_line)
+    if diff > 0
+        if a:pos[1] == 1
+            call append(a:pos[1]-1, repeat(" ", diff))|undojoin
+        else
+            call setline(a:pos[1]-1, old_line + repeat(" ", diff))|undojoin
+        endif
+    endif
+    let lpos = copy(a:pos)
+    if lpos[1] > 1
+        let lpos[1] -= 1
+    endif
+    call setpos('.', lpos)
+    let o = a:f()
+    if diff > 0
+        if a:pos[1] > 1
+            call setline(a:pos[1]-1, old_line)|undojoin
+        else
+            0d|undojoin
+        endif
+    endif
+    return o
+endfunc
 
-let multi#command#command = l:base.new({"undo_count": 0})
+let multi#command#command = {"undo_count": 0}
 function multi#command#command.pre(command)
     let g:multi#state_manager.state.repeat_command = a:command
     let self.undo_count = 0
@@ -102,7 +162,7 @@ function multi#command#command.visual(area, command)
     return [multi#util#new_area('normal')]
 endfunction
 
-let multi#command#textobj = l:base.new({})
+let multi#command#textobj = {}
 function multi#command#textobj.pre(command)
     call multi#util#setup_op()
 endfunc

@@ -1,26 +1,28 @@
-func! multi#state_manager#new()
-   return {
+let g:multi#state_manager = {
           \"matches": [],
           \"cursors": {},
           \"state": {
-              \"tick":         -1,
-              \"moved":         0,
-              \"expect_visual": 0,
-              \"new":          {},
-              \"old":          [],
-              \"yank":          {'yanked':0},
-              \"finished": 0,
-          \},
-          \"init":   function('g:multi#state_manager#init'),
-          \"apply":  function('g:multi#state_manager#apply'),
-          \"redraw": function('g:multi#state_manager#redraw'),
-          \"set_finished": function('g:multi#state_manager#set_finished'),
-          \"test_command_failed": function('g:multi#state_manager#test_command_failed'),
+              \ 'tick':         -1,
+              \ 'moved':         0,
+              \ 'expect_visual': 0,
+              \ 'new':          {},
+              \ 'old':          [],
+              \ 'yank':          {'yanked':0},
+              \ 'finished': 0,
           \}
+          \}
+func! multi#state_manager.new()
+   return deepcopy(self)
 endfunc
-              " \"changed":       0,
+func! multi#state_manager.to_normal()
+    let self.cursors.visual = 'n'
+    for c in self.cursors.cursors
+        let c.visual = 0
+    endfor
+endfunc
+    
 
-func! multi#state_manager#init(...) dict
+func! multi#state_manager.init(...)
     let visual = a:0 ? a:1 : 'n'
     let area = {
            \"visual":   visual,
@@ -34,18 +36,27 @@ func! multi#state_manager#init(...) dict
     call self.redraw()
 endfunc
 
-func! multi#state_manager#test_command_failed(input) dict
+func! multi#state_manager.test_command_failed(input)
     let self.state.finished = 0
+    " Some inputs cause an error that would drop all future inputs
+    " When found, clear the input queue
+    " This is a heuristic that drops some inputs which could be completed into
+    " something valid.
+    " l - movement that completes user-operators
+    "  - cancel pending inputs, getchar, etc
+    " \<Plug>MultiFinished - sentinel, if this input survives we are still live
+    " try
+    "     call multi#util#phantom({-> feedkeys(a:input . "l\<Plug>MultiFinished", 'x') })
+    "  endtry
     call multi#util#phantom({-> feedkeys(a:input . "\<Plug>MultiFinished", 'x') })
     redraw!
     return self.state.finished == 0
 endfunc
 noremap <silent> <Plug>MultiFinished :call g:multi#state_manager.set_finished()<cr>
-func! multi#state_manager#set_finished() dict
+func! multi#state_manager.set_finished()
     let self.state.finished = 1
 endfunc
-
-func! multi#state_manager#apply(func, type, motion, backwards) dict
+func! multi#state_manager.apply(func, type, motion, backwards)
     call clearmatches()
     let result = multi#cursors#new()
     " Go down, left to right for motions because that makes them easier to chain
@@ -58,11 +69,11 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
     let old_line = -1
     let cur_line_cursors = []
     let old_max_col = -1
+    let old_max_line = line("$")
 
     for i in range
         call setreg('"', self.cursors.cursors[i].reg)
         let new_areas = a:func[a:type](self.cursors.cursors[i], a:motion)
-
         " When a cursor is on the same line as other cursors and inserts or
         " deletes characters we have to fix the columns of all cursors to its
         " right. This is essentially a very simplistic reimplementation of marks
@@ -72,13 +83,22 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
         if a:backwards && len(new_areas) > 0
             let line = new_areas[0].cursor[1]
             let changed_line_flag = 0
+            if line("$") != old_max_line
+                " bottom to top. If a cursor adds a new line,
+                " push all existing cursors down a line
+                let delta = line("$") - old_max_line
+                for cursor in result.cursors
+                    let cursor.cursor[1] += delta
+                    let cursor.left[1]   += delta
+                    let cursor.right[1]  += delta
+                endfor
+            endif
             if old_line == line
-                " at least one new cursor was on the previous line - fixing time
+                " right to left, same line. If a cursor adds
+                " characters, push the existing cursors on the same line to the right
                 let new_col  = col([self.cursors.cursors[i].cursor[1], "$"])
                 let delta = new_col - old_max_col
                 if  delta != 0
-                    " the line length changed, we go right to left so shift
-                    " everything right of the new cursor delta columns to the right
                     for cursor in cur_line_cursors
                         let cursor.cursor[2] += delta
                         let cursor.cursor[4] += delta
@@ -91,6 +111,7 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
                 if new_areas[-1].cursor[1] == line
                     " all new cursors are still on the same line, just track
                     " them as well
+                    " uses invariant: new areas are sorted left-to-right, top-to-bottom
                     call extend(cur_line_cursors, new_areas)
                 else
                     let changed_line_flag = 1
@@ -99,8 +120,8 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
                 let changed_line_flag = 1
             endif
             if changed_line_flag
-                " at least one cursor started a new line, so check which
-                " cursors we now have to track instead
+                " at least one cursor changed the line, keep track of the new
+                " cursors on this line
                 let old_line = new_areas[-1].cursor[1]
                 let cur_line_cursors = []
                 for entry in new_areas
@@ -110,6 +131,8 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
                 endfor
                 let old_max_col = col([new_areas[-1].cursor[1], "$"])
             endif
+            let old_max_line = line("$")
+            call reverse(new_areas)
         endif
         for area in new_areas
             " XXX: for commands this currently doesn't merge overlapping
@@ -117,7 +140,6 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
             call multi#cursors#add(result, area, area.visual, a:backwards)
         endfor
     endfor
-
     if a:backwards
         " to avoid side effect overlap we went up, right to left and the
         " cursors are ordered in reverse
@@ -126,7 +148,7 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
     let self.cursors = result
 endfunc
 
-func! multi#state_manager#redraw() dict
+func! multi#state_manager.redraw()
     call multi#draw#reset()
     call setpos(".", [0, 0, 0, 0])
     let visual = self.cursors.visual

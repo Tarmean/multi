@@ -18,6 +18,7 @@ function! multi#util#new_area(visual)
            \"left":     getpos("'["),
            \"right":    getpos("']"),
            \"reg":      getreg('"'),
+           \"draw": function("multi#util#redraw")
            \}
 endfunction
 

@@ -1,14 +1,16 @@
 vnoremap <silent> . <c-c>: call multi#init(visualmode() ==# 'v' ? 'visual_char' : visualmode() ==# 'V' ? 'visual_line' : 'visual_block')<cr>.
 " nnoremap . :call multi#init('normal')
 
-let g:multi#state_manager = multi#state_manager#new()
+let g:multi#state_manager = multi#state_manager.new()
 
 function! multi#init(visual)
     let g:multi#state_manager.state.repeat_command = '.'
     call g:multi#state_manager.init(a:visual)
     augroup MultiChecks
         au!
-        au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
+        if has("nvim")
+            au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
+        endif
         au InsertEnter * let g:multi#state_manager.state.insert_enter = 1
     augroup END
     try
@@ -76,6 +78,7 @@ function! multi#run()
                     continue
                 elseif b:changedtick != old_tick
                     let input = ""
+                    let g:multi#state_manager.cursors.bind = 0
                     norm! u
                     redraw
                     continue
@@ -97,7 +100,7 @@ function! multi#run()
                     norm v
                     let old = [getpos("'<"), getpos("'>"), getreg('"')]
                     exec "norm v".input
-                    norm 
+                    norm! 
                     let new = [getpos("'<"), getpos("'>"), getreg('"')]
                     let movement =  old != new
                 endif
@@ -117,8 +120,9 @@ function! multi#run()
                 norm! u
                 let direction = 1
                 let command = g:multi#command#command
-                if exists("g:repeat_tick") && g:repeat_tick == new_tick
+                if type == 'normal' && exists("g:repeat_tick") && g:repeat_tick == new_tick 
                     " see [NOTE: repeat.vim]
+                    "
                     let input = g:repeat_sequence
                 endif
             elseif g:multi#state_manager.state.yank.yanked
