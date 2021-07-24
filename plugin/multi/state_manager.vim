@@ -97,7 +97,6 @@ func! multi#state_manager#apply(func, type, motion, backwards) dict
                 let old_max_col = col([new_areas[-1].cursor[1], "$"])
             endif
         endif
-                
         for area in new_areas
             " XXX: for commands this currently doesn't merge overlapping
             " cursors. Join and reverse first, then merge?

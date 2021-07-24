@@ -8,7 +8,7 @@ function! multi#init(visual)
     call g:multi#state_manager.init(a:visual)
     augroup MultiChecks
         au!
-        " au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
+        au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
         au InsertEnter * let g:multi#state_manager.state.insert_enter = 1
     augroup END
     try
@@ -26,6 +26,11 @@ function! multi#run()
         " echo b:changedtick
         " echo g:repeat_tick
         let c = getchar()
+        if l:input != '' && nr2char(c) == "\<esc>"
+            let input = ""
+            redraw!
+            continue
+        endif
         let input .= nr2char(c)
 
         let type = multi#util#get_type()
@@ -112,6 +117,10 @@ function! multi#run()
                 norm! u
                 let direction = 1
                 let command = g:multi#command#command
+                if exists("g:repeat_tick") && g:repeat_tick == new_tick
+                    " see [NOTE: repeat.vim]
+                    let input = g:repeat_sequence
+                endif
             elseif g:multi#state_manager.state.yank.yanked
                 let command = g:multi#command#command
             elseif movement
@@ -147,3 +156,26 @@ function! multi#run()
         endif
     endwhile
 endfunction
+
+
+" [NOTE: repeat.vim]
+"
+" Example:
+"
+"     w|ord
+"     > ysiwf      - surround in word function
+"     > function: foo        - text input for function name
+"     |foo(word)
+"
+" This is a custom operator that records its own interactive inputs. The
+" timeline is
+"
+" - We record 'ysiwf'
+" - surround.vim takes over and records 'foo'
+" - on replay, we repeat 'ysiwf' and surround.vim asks the user for a seperate function
+"   names on each cursor
+"
+"   This isn't what we wanted! But there is no good userspace way to record this input,
+"   macros break in a myriad use cases. Solution: Many plugins already stash their
+"   recorded input in repeat.vim so the normal '.' for repeat works. Check if there is
+"   an (up-to-date) repeat.vim recording, and try to replay that instead.

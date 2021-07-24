@@ -1,6 +1,13 @@
-let multi#command#overwrite = {}
+let base = {}
+function base.new(arg={})
+    let s = deepcopy(self)
+    let s = extend(l:s, a:arg)
+    return s
+endfunc
 
-let multi#command#simple_motion = {}
+let multi#command#overwrite = l:base.new({})
+
+let multi#command#simple_motion = l:base.new({})
 function multi#command#simple_motion.normal(area, command)
     call setpos('.', a:area.cursor)
     execute "silent norm " . a:command
@@ -65,7 +72,7 @@ function multi#command#simple_motion.bind(area, command)
     endwhile
 endfunction
 
-let multi#command#command = {"undo_count": 0}
+let multi#command#command = l:base.new({"undo_count": 0})
 function multi#command#command.pre(command)
     let g:multi#state_manager.state.repeat_command = a:command
     let self.undo_count = 0
@@ -95,7 +102,7 @@ function multi#command#command.visual(area, command)
     return [multi#util#new_area('normal')]
 endfunction
 
-let multi#command#textobj = {}
+let multi#command#textobj = l:base.new({})
 function multi#command#textobj.pre(command)
     call multi#util#setup_op()
 endfunc
