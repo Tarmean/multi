@@ -22,7 +22,7 @@ function! multi#run()
     let input = ""
     while 1
         let g:repeat_tick = -1
-        echo g:multi#state_manager.cursors.bind? ". ":"" .input
+        echo g:multi#state_manager.cursors.bind? ". " . input :"" .input
         " echo b:changedtick
         " echo g:repeat_tick
         let c = getchar()
@@ -131,9 +131,9 @@ function! multi#run()
                     let command = g:multi#command#simple_motion
                 endif
             else
-                if g:multi#state_manager.test_command_failed(input)
-                    let input = ""
-                endif
+                " if g:multi#state_manager.test_command_failed(input)
+                "     let input = ""
+                " endif
                 call g:multi#state_manager.redraw()
                 continue
             endif

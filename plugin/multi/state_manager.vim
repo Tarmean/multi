@@ -36,7 +36,7 @@ endfunc
 
 func! multi#state_manager#test_command_failed(input) dict
     let self.state.finished = 0
-    call multi#util#phantom({-> feedkeys(a:input . "\<esc>\<Plug>MultiFinished", 'x') })
+    call multi#util#phantom({-> feedkeys(a:input . "\<Plug>MultiFinished", 'x') })
     redraw!
     return self.state.finished == 0
 endfunc
