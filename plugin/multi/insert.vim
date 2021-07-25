@@ -56,10 +56,10 @@ function multi#command#insert.normal(area, command)
     " echo b:changedtick
     " call getchar()
     if s:first
-        undojoin | call feedkeys(insert_direction, "n") | call feedkeys(a:command, "x")
+        undojoin | execute "norm! ".insert_direction.a:command
         let s:first = 0
     else
-        call feedkeys(insert_direction, "n") | call feedkeys(a:command, "x")
+        execute "norm ".insert_direction.a:command
     endif
     let new_area = multi#util#new_area("normal")
     let new_area[2] = getpos("'^")[2] - 1

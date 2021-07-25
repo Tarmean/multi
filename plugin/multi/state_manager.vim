@@ -93,27 +93,28 @@ func! multi#state_manager.apply(func, type, motion, backwards)
                     let cursor.right[1]  += delta
                 endfor
             endif
-            if old_line == line
+            if self.cursors.cursors[i].cursor[1] == line && old_line == line
                 " right to left, same line. If a cursor adds
                 " characters, push the existing cursors on the same line to the right
                 let new_col  = col([self.cursors.cursors[i].cursor[1], "$"])
                 let delta = new_col - old_max_col
                 if  delta != 0
-                    for cursor in cur_line_cursors
-                        let cursor.cursor[2] += delta
-                        let cursor.cursor[4] += delta
-                        let cursor.left[2]   += delta
-                        let cursor.right[2]  += delta
+                    for cursor in result.cursors
+                        if cursor.cursor[1] == line
+                            let cursor.cursor[2] += delta
+                            let cursor.cursor[4] += delta
+                        endif
+                        if cursor.left[1] == line
+                            let cursor.left[2]   += delta
+                        endif
+                        if cursor.right[1] == line
+                            let cursor.right[2]  += delta
+                        endif
                     endfor
                     let old_max_col = new_col
                 endif
 
-                if new_areas[-1].cursor[1] == line
-                    " all new cursors are still on the same line, just track
-                    " them as well
-                    " uses invariant: new areas are sorted left-to-right, top-to-bottom
-                    call extend(cur_line_cursors, new_areas)
-                else
+                if new_areas[-1].cursor[1] != line
                     let changed_line_flag = 1
                 endif
             else
@@ -123,12 +124,6 @@ func! multi#state_manager.apply(func, type, motion, backwards)
                 " at least one cursor changed the line, keep track of the new
                 " cursors on this line
                 let old_line = new_areas[-1].cursor[1]
-                let cur_line_cursors = []
-                for entry in new_areas
-                    if entry.cursor[1] == old_line
-                        call add(cur_line_cursors, entry)
-                    endif
-                endfor
                 let old_max_col = col([new_areas[-1].cursor[1], "$"])
             endif
             let old_max_line = line("$")
