@@ -10,7 +10,7 @@ Experimental multiple cursor plugin for vim.
 
 `.` in visual mode is for-each. Here are some usage examples:
 
-#### Replace characters in line
+#### Basic Usage
 
     V.f/r\
 
@@ -25,13 +25,13 @@ This plugin does not re-implement vim for multi-cursor-mode. Instead it just exe
 
 This means that many inputs, including plugins like surround.vim, just work out of the box with multiple cursors.
 
-#### Change multiple '-strings to "-strings
+#### Other Plugins and Text Objects
 
-    vip.jcs'"
+    vip.a"cs"'
 
 - `vip` - select in paragraph
-- `.j` - foreach line
-- `cs'"` - change surrounding ' to "
+- `.a"` - foreach around " (selects each "-pair)
+- `cs'"` - change surrounding " to '
 
 #### Place cursors on pattern
 
