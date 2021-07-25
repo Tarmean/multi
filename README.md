@@ -31,7 +31,7 @@ This means that many inputs, including plugins like surround.vim, just work out 
 
 - `vip` - select in paragraph
 - `.a"` - foreach around " (selects each "-pair)
-- `cs'"` - change surrounding " to '
+- `cs"'` - change surrounding " to '
 
 #### Place cursors on pattern
 
