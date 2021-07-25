@@ -17,7 +17,7 @@ Experimental multiple cursor plugin for vim.
 - `V`  - select line
 - `.`  - for each
 - `f/` - '/'-character
-- `r\` - replace-with '\'
+- `r\` - replace-with '\\'
 
 So `.` is an operator in visual mode. It accepts a movement (or text-object), and places a cursor on each target of this movement in the selected area.
 
