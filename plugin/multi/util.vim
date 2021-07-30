@@ -38,7 +38,7 @@ function! multi#util#test_op(type)
     else
         let state.moved = 1
     endif
-    " let g:a  = a:type ." ".string(state.old)." ". string(state.new) ." ".string(state.moved)
+    let g:a  = a:type ." ".string(state.old)." ". string(state.new) ." ".string(state.moved)
 endfunction
 
 

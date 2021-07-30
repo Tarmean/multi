@@ -36,7 +36,7 @@ endfunction
 function multi#command#simple_motion.bind(area, command)
     let cur_pos = a:area.left
     let result = []
-    if s:check_self_movement(a:area, a:command)
+    if multi#command#check_self_movement(a:area, "norm " . a:command)
         call add(result,multi#util#new_area('normal'))
     endif
     while 1
@@ -67,10 +67,10 @@ function multi#command#simple_motion.bind(area, command)
         endif
     endwhile
 endfunction
-function! s:check_self_movement(area, command)
+function! multi#command#check_self_movement(area, command)
     let start_pos = a:area.left
     function! s:movement_check() closure
-        exec "norm ". a:command
+        exec a:command
     endfunction
     call s:ensure_before_pos(start_pos, funcref("s:movement_check"))
     if start_pos == getpos(".")
@@ -91,14 +91,14 @@ function! s:ensure_before_pos(pos, f)
     if lpos[2] > 1
         let lpos[2] -= 1
     endif
-    call setpos('.', lpos)
+    call multi#util#setup(lpos)
     let o = a:f()
     if a:pos[2] == 1
         silent! undojoin|call setline(a:pos[1], old_line)
         let curpos = getpos(".")
         let curpos[2] -= 1
         let curpos[3] -= 1
-        call setpos('.', curpos)
+        call multi#util#setup(curpos)
     endif
     return o
 endfunc
@@ -120,7 +120,7 @@ function! s:ensure_above_pos(pos, f)
     if lpos[1] > 1
         let lpos[1] -= 1
     endif
-    call setpos('.', lpos)
+    call multi#util#setup(lpos)
     let o = a:f()
     if diff > 0
         if a:pos[1] > 1

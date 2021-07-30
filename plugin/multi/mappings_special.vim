@@ -76,7 +76,7 @@ function multi#command#overwrite[''].visual(area, command)
 endfunction
 
 " let multi#command#overwrite['f'] = multi#command#complex_motion
-" let multi#command#overwrite['/'] = deepcopy(multi#command#complex_motion)
+let multi#command#overwrite['/'] = deepcopy(multi#command#complex_motion)
 
 let multi#command#overwrite['J'] = multi#command#command
 

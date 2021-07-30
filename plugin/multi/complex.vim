@@ -34,6 +34,9 @@ function multi#command#complex_motion.visual(area, command)
     return [new_area]
 endfunction
 function multi#command#complex_motion.bind(area, command)
+    call multi#util#setup_op()
+    let op_command = 'g@v' . a:command
+    call feedkeys(op_command, 'ix!')
     if a:area.visual == "visual_line"
         let right_border = deepcopy(a:area.right)
         let right_border[2] = 2147483647
@@ -43,13 +46,17 @@ function multi#command#complex_motion.bind(area, command)
 
     let cur_pos = a:area.left
     let result = []
+    if multi#command#check_self_movement(a:area, "norm! .")
+        call add(result,multi#util#new_area('normal'))
+    endif
     while 1
         let old_pos = cur_pos
 
         call multi#util#setup(cur_pos)
-        norm .
+        norm! .
         let new_area = g:multi#state_manager.state.new
         let cur_pos = new_area.cursor
+        echom cur_pos
 
         let check_in_area = multi#util#compare_pos(cur_pos[0:3], right_border) < 1
         let check_not_recursive = multi#util#compare_pos(old_pos[0:3], cur_pos[0:3]) == -1
@@ -65,10 +72,6 @@ function multi#command#complex_motion.bind(area, command)
     endwhile
 endfunction
 
-function multi#command#complex_motion.pre(command)
-    call multi#util#setup_op()
-    call multi#util#apply_op(a:command, 1, 1)
-endfunction
 function multi#command#complex_motion.post()
     call multi#util#clean_op()
 endfunction
