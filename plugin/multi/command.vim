@@ -73,7 +73,7 @@ function! multi#command#check_self_movement(area, command)
         exec a:command
     endfunction
     call s:ensure_before_pos(start_pos, funcref("s:movement_check"))
-    if start_pos == getpos(".")
+    if start_pos  == getpos(".")
         return 1
     endif
     " call s:ensure_above_pos(start_pos, function("s:movement_check"))
@@ -95,10 +95,10 @@ function! s:ensure_before_pos(pos, f)
     let o = a:f()
     if a:pos[2] == 1
         silent! undojoin|call setline(a:pos[1], old_line)
-        let curpos = getpos(".")
+        let curpos = g:multi#state_manager.state.moved ? g:multi#state_manager.state.new.cursor : getpos(".")
         let curpos[2] -= 1
         let curpos[3] -= 1
-        call multi#util#setup(curpos)
+        call setpos('.', curpos)
     endif
     return o
 endfunc
