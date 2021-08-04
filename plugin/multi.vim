@@ -9,7 +9,7 @@ function! multi#init(visual)
     augroup MultiChecks
         au!
         if has("nvim")
-            au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1
+            au TextYankPost * let g:multi#state_manager.state.yank.yanked = 1|let g:multi#state_manager#yank_stash = []
         endif
         au InsertEnter * let g:multi#state_manager.state.insert_enter = 1
     augroup END

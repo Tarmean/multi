@@ -134,11 +134,13 @@ function multi#command#overwrite[''].pre(command)
         let self.keep_cur = 0
     endif
     let self.reg = ''
+    let self.reg_stash = []
 endfunction
 function multi#command#overwrite[''].normal(area, command)
     if self.keep_cur
         return [a:area]
     endif
+    call add(self.reg_stash, a:area.reg)
     if a:area.reg[len(a:area.reg)-1] != "\n"
         let a:area.reg .= "\n"
     endif
@@ -155,4 +157,5 @@ function multi#command#overwrite[''].visual(area, command)
 endfunction
 function multi#command#overwrite[''].post()
     call setreg('"', self.reg)
+    let g:multi#state_manager#yank_stash = self.reg_stash
 endfunction

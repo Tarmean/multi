@@ -141,6 +141,19 @@ func! multi#state_manager.apply(func, type, motion, backwards)
         call reverse(result.cursors)
     endif
     let self.cursors = result
+    if !empty(g:multi#state_manager#yank_stash)
+        let lold = len(g:multi#state_manager#yank_stash)
+        let lnew = len(self.cursors.cursors)
+        for i in range(min([lnew, lold]))
+            let self.cursors.cursors[i].reg = g:multi#state_manager#yank_stash[i]
+        endfor
+        if lnew > lold && lold != 1
+            for i in range(lold, lnew-1) 
+                let self.cursors.cursors[i].reg = ""
+            endfor
+        endif
+        let g:multi#state_manager#yank_stash = []
+    endif
 endfunc
 
 func! multi#state_manager.redraw()
@@ -161,3 +174,4 @@ func! multi#state_manager.redraw()
     call setpos(".", self.cursors.cursors[-1].cursor)
     redraw
 endfunc
+let g:multi#state_manager#yank_stash = []
