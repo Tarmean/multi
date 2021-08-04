@@ -54,4 +54,4 @@ This restriction is mirrored elsewhere - generally interactive commands are eith
 It is a bit tricky to recognize if the first character in a region should be targeted by a motion. We can try to execute the motion one character before the region, but what if it's the start of the line/file? The current trick is to briefly mutate the buffer to add a space and hide the undo-node. But directly after the user used 'undo', this unfortunately doesn't work. As a result vim marks the file as dirty and creates a noop undo node.
 
 
-Occasionally the input gets stuck, for instance if you 'fy' without a 'y' on the same line. This type of soft-failure is hard to detect without breaking various stateful plugins so the test is currently disabled. Press '<esc>' to clear the input queue.
+Occasionally the input gets stuck, for instance if you 'fy' without a 'y' on the same line. This type of soft-failure is hard to detect without breaking various stateful plugins so the test is currently disabled. Press '\<esc>' to clear the input queue.
