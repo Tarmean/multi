@@ -8,7 +8,7 @@ function multi#command#simple_motion.normal(area, command)
 endfunction
 function multi#command#simple_motion.visual(area, command)
     let side = !has_key(a:area, "side") || !a:area.side
-    if side                 
+    if side
         let cur = "right"
         let alt = "left"
     else
@@ -196,7 +196,7 @@ function multi#command#textobj.bind(area, command)
             let cur_pos[2] = 1
         endif
 
-        if  multi#util#compare_pos(new_area.right, a:area.right) < 1 && 
+        if  multi#util#compare_pos(new_area.right, a:area.right) < 1 &&
             \multi#util#compare_pos(old_pos, cur_pos) == -1
            call add(result, new_area)
         else

@@ -6,7 +6,7 @@ function multi#command#complex_motion.normal(area, command)
 endfunction
 function multi#command#complex_motion.visual(area, command)
     let side = !has_key(a:area, "side") || !a:area.side
-    if side                 
+    if side
         let cur = "right"
         let alt = "left"
     else

@@ -20,7 +20,7 @@ func! multi#state_manager.to_normal()
         let c.visual = 0
     endfor
 endfunc
-    
+
 
 func! multi#state_manager.init(...)
     let visual = a:0 ? a:1 : 'n'
@@ -148,7 +148,7 @@ func! multi#state_manager.apply(func, type, motion, backwards)
             let self.cursors.cursors[i].reg = g:multi#state_manager#yank_stash[i]
         endfor
         if lnew > lold && lold != 1
-            for i in range(lold, lnew-1) 
+            for i in range(lold, lnew-1)
                 let self.cursors.cursors[i].reg = ""
             endfor
         endif

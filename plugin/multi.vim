@@ -120,7 +120,7 @@ function! multi#run()
                 norm! u
                 let direction = 1
                 let command = g:multi#command#command
-                if type == 'normal' && exists("g:repeat_tick") && g:repeat_tick == new_tick 
+                if type == 'normal' && exists("g:repeat_tick") && g:repeat_tick == new_tick
                     " see [NOTE: repeat.vim]
                     "
                     let input = g:repeat_sequence
